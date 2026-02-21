@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+  <img src="./public/logo.png" alt="Comdes Logo" width="120" height="120" />
+  <h1>Comdes</h1>
+  <p><strong>Interactive Compiler Design Learning Platform</strong></p>
+</div>
 
-## Getting Started
+---
 
-First, run the development server:
+<p align="center">
+  A visual, semantic-driven web application for mastering Context-Free Grammars, FIRST/FOLLOW set mathematical closure, and simulating production-grade Bottom-Up parsing algorithms (LL, LR, SLR, CLR, LALR).
+</p>
+
+## ✨ Features
+
+- **Grammar Engine Validation**: Defines, tests, and validates formal Context-Free Grammars (CFGs). Automatically diagnoses Left-Recursion, Ambiguity, and Missing Non-Terminals.
+- **Set Generation**: Compute and view comprehensive `FIRST(&alpha;)` and `FOLLOW(A)` sets.
+- **Parsing Algorithms**: Generates Action/Goto discrete transition mapping tables across multiple algorithmic tiers:
+  - 🟢 `LL(1)` Top-Down Predictive Parsing
+  - 🔵 `LR(0)` Pure Shift/Reduce State Machine
+  - 🟡 `SLR(1)` Simple LR (with Follow Sets)
+  - 🟠 `CLR(1)` Canonical LR (1-lookahead Context)
+  - 🟣 `LALR(1)` Look-Ahead LR (Production Standard)
+- **Interactive Visualizers**:
+  - Automatically draws step-by-step **Parse Trees** mapping Terminal derivation.
+  - Renders the exhaustive DFA (Deterministic Finite Automaton) closure graph using `ReactFlow` for state visualization.
+- **Educational Knowledge Base**: Built-in curriculum on the semantics of compilers, algorithms, and algorithm-specific weaknesses. Contains built-in "Practice Grammars" for student exercises.
+- **Local Persistence & Privacy**: Grammars can be safely cached and reloaded. The entire application executes completely locally in the browser with `0` backend telemetries required.
+
+## 🚀 Quick Start
+
+Ensure you have Node.js installed, then clone the repository:
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/comdes.git
+
+# 2. Enter the directory
+cd comdes
+
+# 3. Install dependencies
+npm install
+
+# 4. Start the interactive development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Navigate to `http://localhost:3000` to interact with the visualizer dashboard.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠 Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: `Next.js 14` (App Router)
+- **UI/Components**: `React 18`, `TailwindCSS v3`, `Shadcn/UI`, `Lucide Icons`
+- **State Management**: `Zustand`
+- **Graphs/Visualizations**: `ReactFlow / XYFlow`
+- **Typing**: `TypeScript`
 
-## Learn More
+## 🧠 Educational Approach
 
-To learn more about Next.js, take a look at the following resources:
+Comdes aims to make learning extreme edge-cases of compiler generation **highly accessible**. When exploring Grammars, you'll find native **Tooltips embedded everywhere** to define complicated theory components ("Lookahead", "Shift", "Reduce", "Goto").
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Errors natively alert you to grammar conflicts—if you accidentally declare an inherently ambiguous `LL(1)` Grammar mapping, the system won't just crash, it will explicitly alert you to the Multiply-Defined Table entries halting the compilation trace.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**License:** Open Source via the MIT License.
