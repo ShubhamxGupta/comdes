@@ -9,9 +9,7 @@ import { Analytics } from "@vercel/analytics/next";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://comdes.vercel.app",
-  ),
+  metadataBase: new URL("https://comdes.vercel.app"),
   title: "Comdes | Interactive Compiler Learning",
   description:
     "Interactive Compiler Design Learning Platform. Build context-free grammars, compute FIRST & FOLLOW sets, and simulate LL(1) and LR parsing trees step-by-step.",
