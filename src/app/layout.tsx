@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -50,6 +51,9 @@ export const metadata: Metadata = {
       "Interactive Compiler Design Learning Platform. Build and simulate grammars.",
   },
   robots: "index, follow",
+  verification: {
+    google: "kZLsm8vZ527s-_V4Tcjwn85lMqHQH7HgS8vLbfg0vmE",
+  },
 };
 
 export default function RootLayout({
@@ -73,6 +77,7 @@ export default function RootLayout({
             </div>
           </TooltipProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
