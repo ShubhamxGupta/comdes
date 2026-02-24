@@ -218,7 +218,7 @@ export function buildCanonicalCollection(
 export function buildSLRTable(
   grammar: Grammar,
   followSets: Map<string, Set<string>>,
-): { table: LRTable; conflicts: string[] } {
+): { table: LRTable; conflicts: string[]; collection: CanonicalCollection } {
   const collection = buildCanonicalCollection(grammar);
   const table: LRTable = { action: {}, goto: {} };
   const conflicts: string[] = [];
@@ -296,7 +296,7 @@ export function buildSLRTable(
     });
   });
 
-  return { table, conflicts };
+  return { table, conflicts, collection };
 }
 
 // ============================================
@@ -485,7 +485,7 @@ export function buildLR1Collection(
 export function buildCLRTable(
   grammar: Grammar,
   firstSets: FirstFollowSets,
-): { table: LRTable; conflicts: string[] } {
+): { table: LRTable; conflicts: string[]; collection: CanonicalCollection } {
   const collection = buildLR1Collection(grammar, firstSets);
   const table: LRTable = { action: {}, goto: {} };
   const conflicts: string[] = [];
@@ -548,7 +548,7 @@ export function buildCLRTable(
     });
   });
 
-  return { table, conflicts };
+  return { table, conflicts, collection };
 }
 
 function itemsCoreEqual(a: LRItem, b: LRItem): boolean {

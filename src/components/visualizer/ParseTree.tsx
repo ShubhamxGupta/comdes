@@ -12,18 +12,23 @@ import "reactflow/dist/style.css";
 import { useGrammarStore } from "@/store/useGrammarStore";
 
 interface ParseTreeProps {
-  type: "LL1" | "LR";
+  type: "LL1" | "SLR1" | "CLR1" | "LALR1";
 }
 
 function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
-  const { ll1ParseTree, lrParseTree } = useGrammarStore();
+  const { ll1ParseTree, slrParseTree, clrParseTree, lalrParseTree } =
+    useGrammarStore();
   const { fitView } = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    const treeData = type === "LL1" ? ll1ParseTree : lrParseTree;
+    let treeData = null;
+    if (type === "LL1") treeData = ll1ParseTree;
+    else if (type === "SLR1") treeData = slrParseTree;
+    else if (type === "CLR1") treeData = clrParseTree;
+    else if (type === "LALR1") treeData = lalrParseTree;
 
     if (!treeData) {
       setNodes([]);
@@ -56,7 +61,15 @@ function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
 
     setNodes(visibleNodes);
     setEdges(visibleEdges);
-  }, [ll1ParseTree, lrParseTree, type, setNodes, setEdges]);
+  }, [
+    ll1ParseTree,
+    slrParseTree,
+    clrParseTree,
+    lalrParseTree,
+    type,
+    setNodes,
+    setEdges,
+  ]);
 
   // Separate effect for fitting view
   useEffect(() => {

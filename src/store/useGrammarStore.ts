@@ -30,8 +30,16 @@ interface GrammarState {
   parsedGrammar: Grammar | null;
   selectedParsers: ParserType[];
   ll1Table: { table: ParsingTable; conflicts: string[] } | null;
-  slrTable: { table: LRTable; conflicts: string[] } | null;
-  clrTable: { table: LRTable; conflicts: string[] } | null;
+  slrTable: {
+    table: LRTable;
+    conflicts: string[];
+    collection: CanonicalCollection;
+  } | null;
+  clrTable: {
+    table: LRTable;
+    conflicts: string[];
+    collection: CanonicalCollection;
+  } | null;
   lalrTable: {
     table: LRTable;
     conflicts: string[];
@@ -43,9 +51,13 @@ interface GrammarState {
 
   // Simulation State
   ll1Steps: ParsingStep[];
-  lrSteps: ParsingStep[];
+  slrSteps: ParsingStep[];
+  clrSteps: ParsingStep[];
+  lalrSteps: ParsingStep[];
   ll1ParseTree: { nodes: Node[]; edges: Edge[] } | null;
-  lrParseTree: { nodes: Node[]; edges: Edge[] } | null;
+  slrParseTree: { nodes: Node[]; edges: Edge[] } | null;
+  clrParseTree: { nodes: Node[]; edges: Edge[] } | null;
+  lalrParseTree: { nodes: Node[]; edges: Edge[] } | null;
 
   error: string | null;
 
@@ -71,9 +83,13 @@ export const useGrammarStore = create<GrammarState>((set, get) => ({
   followSets: null,
 
   ll1Steps: [],
-  lrSteps: [],
+  slrSteps: [],
+  clrSteps: [],
+  lalrSteps: [],
   ll1ParseTree: null,
-  lrParseTree: null,
+  slrParseTree: null,
+  clrParseTree: null,
+  lalrParseTree: null,
 
   error: null,
 
@@ -155,9 +171,13 @@ export const useGrammarStore = create<GrammarState>((set, get) => ({
         error: null,
         // Reset simulation
         ll1Steps: [],
-        lrSteps: [],
+        slrSteps: [],
+        clrSteps: [],
+        lalrSteps: [],
         ll1ParseTree: null,
-        lrParseTree: null,
+        slrParseTree: null,
+        clrParseTree: null,
+        lalrParseTree: null,
       });
 
       // Auto-simulate if there is test input
@@ -214,33 +234,65 @@ export const useGrammarStore = create<GrammarState>((set, get) => ({
 
     // Choose strongest available table for simulation
     const { clrTable, lalrTable } = get();
-    // Usually LALR is most standard to simulate if available, but users can have errors. Let's use SLR if it's the only one.
-    // For now, simulate with slrTable as default, or lalr if available.
 
-    // Quick fallback selection
-    let targetLRTable = null;
-    if (get().selectedParsers.includes("LALR1") && lalrTable)
-      targetLRTable = lalrTable;
-    else if (get().selectedParsers.includes("CLR1") && clrTable)
-      targetLRTable = clrTable;
-    else if (get().selectedParsers.includes("SLR1") && slrTable)
-      targetLRTable = slrTable;
-
-    if (targetLRTable) {
-      if (targetLRTable.conflicts.length === 0) {
+    let slrSteps: ParsingStep[] = [];
+    let slrTree = null;
+    if (slrTable) {
+      if (slrTable.conflicts.length === 0) {
         try {
-          lrSteps = simulateLR(tokens, targetLRTable.table);
-          lrTree = buildLRTree(lrSteps, parsedGrammar);
+          slrSteps = simulateLR(tokens, slrTable.table);
+          slrTree = buildLRTree(slrSteps, parsedGrammar);
         } catch (e) {
-          console.warn("LR Simulation failed", e);
+          console.warn("SLR Simulation failed", e);
         }
       } else {
-        lrSteps = [
+        slrSteps = [
           {
             stack: [],
             input: [],
-            action:
-              "Error: Grammar is not strictly LR(1). Cannot simulate or build parsing tree due to Reduce/Reduce or Shift/Reduce conflicts in the chosen table.",
+            action: "Error: Grammar is not strictly SLR(1).",
+          },
+        ];
+      }
+    }
+
+    let clrSteps: ParsingStep[] = [];
+    let clrTree = null;
+    if (clrTable) {
+      if (clrTable.conflicts.length === 0) {
+        try {
+          clrSteps = simulateLR(tokens, clrTable.table);
+          clrTree = buildLRTree(clrSteps, parsedGrammar);
+        } catch (e) {
+          console.warn("CLR Simulation failed", e);
+        }
+      } else {
+        clrSteps = [
+          {
+            stack: [],
+            input: [],
+            action: "Error: Grammar is not strictly CLR(1).",
+          },
+        ];
+      }
+    }
+
+    let lalrSteps: ParsingStep[] = [];
+    let lalrTree = null;
+    if (lalrTable) {
+      if (lalrTable.conflicts.length === 0) {
+        try {
+          lalrSteps = simulateLR(tokens, lalrTable.table);
+          lalrTree = buildLRTree(lalrSteps, parsedGrammar);
+        } catch (e) {
+          console.warn("LALR Simulation failed", e);
+        }
+      } else {
+        lalrSteps = [
+          {
+            stack: [],
+            input: [],
+            action: "Error: Grammar is not strictly LALR(1).",
           },
         ];
       }
@@ -248,9 +300,13 @@ export const useGrammarStore = create<GrammarState>((set, get) => ({
 
     set({
       ll1Steps,
-      lrSteps,
+      slrSteps,
+      clrSteps,
+      lalrSteps,
       ll1ParseTree: ll1Tree,
-      lrParseTree: lrTree,
+      slrParseTree: slrTree,
+      clrParseTree: clrTree,
+      lalrParseTree: lalrTree,
     });
   },
 }));

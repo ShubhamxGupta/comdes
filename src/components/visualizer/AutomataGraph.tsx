@@ -40,6 +40,11 @@ const StateNode = ({ data }: { data: { id: number; items: LRItem[] } }) => {
             {item.dotIndex === item.rhs.length && (
               <span className="text-red-500 font-bold">.</span>
             )}
+            {item.lookahead && item.lookahead.length > 0 && (
+              <span className="text-muted-foreground ml-1 font-semibold">
+                , {item.lookahead.join("/")}
+              </span>
+            )}
           </div>
         ))}
       </div>

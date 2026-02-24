@@ -21,7 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, Play, Save } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AlertCircle, Play, Save, Wand2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -30,13 +36,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
-import { ParserType } from "@/engine/types";
+import { ParserType, ParsingStep } from "@/engine/types";
 
 // Visualizers
 import { ParseTreeVisualizer } from "@/components/visualizer/ParseTree";
 import { ParsingTableVisualizer } from "@/components/visualizer/ParsingTable";
 import { AutomataGraph } from "@/components/visualizer/AutomataGraph";
 import { useSavedGrammars } from "@/hooks/useSavedGrammars";
+import { eliminateLeftRecursion, leftFactor } from "@/engine/transformations";
 
 function SolverContent() {
   const {
@@ -56,11 +63,22 @@ function SolverContent() {
     setSelectedParsers,
     clrTable,
     lalrTable,
+    ll1Steps,
+    slrSteps,
+    clrSteps,
+    lalrSteps,
   } = useGrammarStore();
 
-  const [activeTab, setActiveTab] = useState("tree");
-  const [treeType, setTreeType] = useState<"LL1" | "LR">("LL1");
-  const [automataType, setAutomataType] = useState<"LR0" | "LALR1">("LR0");
+  const [activeTab, setActiveTab] = useState("sets");
+  const [treeType, setTreeType] = useState<"LL1" | "SLR1" | "CLR1" | "LALR1">(
+    "LL1",
+  );
+  const [automataType, setAutomataType] = useState<"LR0" | "LR1" | "LALR1">(
+    "LR0",
+  );
+  const [stepsType, setStepsType] = useState<"LL1" | "SLR1" | "CLR1" | "LALR1">(
+    "LL1",
+  );
 
   const searchParams = useSearchParams();
   const problemId = searchParams.get("problemId");
@@ -120,9 +138,14 @@ function SolverContent() {
           className="bg-background flex flex-col p-4 gap-4"
         >
           <div className="flex-1 flex flex-col gap-2">
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center mb-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="grammar-input">Grammar Rules</Label>
+                <Label
+                  htmlFor="grammar-input"
+                  className="text-sm font-semibold"
+                >
+                  Grammar Rules
+                </Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
@@ -135,26 +158,69 @@ function SolverContent() {
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <Select
-                onValueChange={(id) => {
-                  const dbProblem = problems.find((p) => p.id === id);
-                  if (dbProblem) {
-                    setRawInput(dbProblem.grammar);
-                    setTestInput(dbProblem.testInput);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-[140px] h-7 text-xs">
-                  <SelectValue placeholder="Load Example" />
-                </SelectTrigger>
-                <SelectContent>
-                  {problems.map((p) => (
-                    <SelectItem key={p.id} value={p.id} className="text-xs">
-                      {p.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Wand2 className="mr-2 h-3 w-3" /> Transform
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        try {
+                          setRawInput(eliminateLeftRecursion(rawInput));
+                        } catch (e) {
+                          alert(
+                            e instanceof Error
+                              ? e.message
+                              : "Failed to eliminate left recursion.",
+                          );
+                        }
+                      }}
+                      disabled={!rawInput.trim()}
+                    >
+                      Eliminate Left Recursion
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        try {
+                          setRawInput(leftFactor(rawInput));
+                        } catch (e) {
+                          alert(
+                            e instanceof Error
+                              ? e.message
+                              : "Failed to left factor grammar.",
+                          );
+                        }
+                      }}
+                      disabled={!rawInput.trim()}
+                    >
+                      Left Factor Grammar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Select
+                  onValueChange={(id) => {
+                    const dbProblem = problems.find((p) => p.id === id);
+                    if (dbProblem) {
+                      setRawInput(dbProblem.grammar);
+                      setTestInput(dbProblem.testInput);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[140px] h-7 text-xs">
+                    <SelectValue placeholder="Load Example" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {problems.map((p) => (
+                      <SelectItem key={p.id} value={p.id} className="text-xs">
+                        {p.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Textarea
               id="grammar-input"
@@ -265,19 +331,145 @@ function SolverContent() {
               onValueChange={setActiveTab}
               className="h-full flex flex-col"
             >
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="table">Parsing Table</TabsTrigger>
-                <TabsTrigger value="tree">Parse Tree</TabsTrigger>
-                <TabsTrigger value="automata">Automata (LR)</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="sets">FIRST & FOLLOW</TabsTrigger>
+                <TabsTrigger value="automata">Automata (LR)</TabsTrigger>
+                <TabsTrigger value="table">Parsing Table</TabsTrigger>
+                <TabsTrigger value="steps">Parsing Steps</TabsTrigger>
+                <TabsTrigger value="tree">Parse Tree</TabsTrigger>
               </TabsList>
 
               <div className="flex-1 mt-4 overflow-auto bg-background rounded-md border p-4">
+                <TabsContent value="steps" className="h-full m-0 relative">
+                  <div className="flex flex-col h-full">
+                    <div className="flex justify-start p-2 border-b gap-2 items-center">
+                      <div className="flex items-center gap-2 mr-2">
+                        <span className="text-sm font-medium">Steps Type:</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>
+                              Step-by-step breakdown of the parsing process
+                              (Stack, Input, Action).
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex gap-1 bg-muted/20 p-0.5 rounded-md">
+                        {(["LL1", "SLR1", "CLR1", "LALR1"] as const)
+                          .filter((type) => selectedParsers.includes(type))
+                          .map((type) => {
+                            let disabled = true;
+                            if (type === "LL1")
+                              disabled =
+                                !ll1Table || ll1Table.conflicts.length > 0;
+                            else if (type === "SLR1") disabled = !slrTable;
+                            else if (type === "CLR1") disabled = !clrTable;
+                            else if (type === "LALR1") disabled = !lalrTable;
+
+                            return (
+                              <Button
+                                key={type}
+                                variant={
+                                  stepsType === type ? "secondary" : "ghost"
+                                }
+                                size="sm"
+                                onClick={() =>
+                                  setStepsType(
+                                    type as "LL1" | "SLR1" | "CLR1" | "LALR1",
+                                  )
+                                }
+                                disabled={disabled}
+                                className="h-7 text-xs"
+                              >
+                                {type.replace("1", "(1)")}
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-auto mt-4">
+                      {(["LL1", "SLR1", "CLR1", "LALR1"] as const)
+                        .filter((type) => selectedParsers.includes(type))
+                        .map((type) => {
+                          let steps: ParsingStep[] = [];
+                          if (type === "LL1") steps = ll1Steps;
+                          else if (type === "SLR1") steps = slrSteps;
+                          else if (type === "CLR1") steps = clrSteps;
+                          else if (type === "LALR1") steps = lalrSteps;
+
+                          if (stepsType !== type || steps.length === 0)
+                            return null;
+
+                          return (
+                            <div
+                              key={type}
+                              className="border rounded-md overflow-hidden"
+                            >
+                              <table className="w-full text-sm text-left">
+                                <thead className="bg-muted">
+                                  <tr>
+                                    <th className="px-4 py-3 font-semibold border-b w-1/3">
+                                      Stack
+                                    </th>
+                                    <th className="px-4 py-3 font-semibold border-b border-l w-1/3 text-right">
+                                      Input
+                                    </th>
+                                    <th className="px-4 py-3 font-semibold border-b border-l w-1/3">
+                                      Action
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {steps.map((step, idx) => (
+                                    <tr
+                                      key={idx}
+                                      className={`border-b last:border-0 ${idx % 2 === 0 ? "bg-background" : "bg-muted/20"}`}
+                                    >
+                                      <td className="px-4 py-3 font-mono border-r whitespace-pre-wrap">
+                                        {step.stack.join(" ")}
+                                      </td>
+                                      <td className="px-4 py-3 font-mono border-r whitespace-pre-wrap text-right">
+                                        {step.input.join(" ")}
+                                      </td>
+                                      <td className="px-4 py-3 border-r whitespace-pre-wrap">
+                                        {step.action}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        })}
+                      {(() => {
+                        let currentSteps: ParsingStep[] = [];
+                        if (stepsType === "LL1") currentSteps = ll1Steps;
+                        else if (stepsType === "SLR1") currentSteps = slrSteps;
+                        else if (stepsType === "CLR1") currentSteps = clrSteps;
+                        else if (stepsType === "LALR1")
+                          currentSteps = lalrSteps;
+
+                        if (currentSteps.length === 0) {
+                          return (
+                            <div className="flex items-center justify-center h-full min-h-[200px] text-muted-foreground w-full">
+                              No parsing steps available. Try selecting a
+                              different algorithm or checking for conflicts.
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="table" className="h-full m-0">
                   {selectedParsers.includes("LL1") &&
                     (ll1Table ? (
-                      <div className="prose dark:prose-invert max-w-none">
-                        <h3>LL(1) Parsing Table</h3>
+                      <div className="grid gap-4 mt-2">
                         {ll1Table.conflicts.length > 0 && (
                           <Alert variant="destructive" className="mb-4">
                             <AlertCircle className="h-4 w-4" />
@@ -292,6 +484,7 @@ function SolverContent() {
                           </Alert>
                         )}
                         <ParsingTableVisualizer
+                          title="LL(1) Parsing Table"
                           type="LL1"
                           data={ll1Table.table}
                           grammar={parsedGrammar}
@@ -304,9 +497,8 @@ function SolverContent() {
                       </div>
                     ))}
 
-                  {slrTable && (
-                    <div className="prose dark:prose-invert max-w-none mt-8">
-                      <h3>SLR(1) Parsing Table</h3>
+                  {selectedParsers.includes("SLR1") && slrTable && (
+                    <div className="grid gap-4 mt-6">
                       {slrTable.conflicts.length > 0 && (
                         <Alert variant="destructive" className="mb-4">
                           <AlertCircle className="h-4 w-4" />
@@ -319,6 +511,7 @@ function SolverContent() {
                         </Alert>
                       )}
                       <ParsingTableVisualizer
+                        title="SLR(1) Parsing Table"
                         type="SLR1"
                         data={slrTable.table}
                         grammar={parsedGrammar}
@@ -326,9 +519,8 @@ function SolverContent() {
                     </div>
                   )}
 
-                  {clrTable && (
-                    <div className="prose dark:prose-invert max-w-none mt-8">
-                      <h3>CLR(1) Parsing Table</h3>
+                  {selectedParsers.includes("CLR1") && clrTable && (
+                    <div className="grid gap-4 mt-6">
                       {clrTable.conflicts.length > 0 && (
                         <Alert variant="destructive" className="mb-4">
                           <AlertCircle className="h-4 w-4" />
@@ -341,6 +533,7 @@ function SolverContent() {
                         </Alert>
                       )}
                       <ParsingTableVisualizer
+                        title="CLR(1) Parsing Table"
                         type="SLR1" // SLR1 renderer works for CLR since the structure Action/Goto is identical
                         data={clrTable.table}
                         grammar={parsedGrammar}
@@ -348,9 +541,8 @@ function SolverContent() {
                     </div>
                   )}
 
-                  {lalrTable && (
-                    <div className="prose dark:prose-invert max-w-none mt-8">
-                      <h3>LALR(1) Parsing Table</h3>
+                  {selectedParsers.includes("LALR1") && lalrTable && (
+                    <div className="grid gap-4 mt-6">
                       {lalrTable.conflicts.length > 0 && (
                         <Alert variant="destructive" className="mb-4">
                           <AlertCircle className="h-4 w-4" />
@@ -363,6 +555,7 @@ function SolverContent() {
                         </Alert>
                       )}
                       <ParsingTableVisualizer
+                        title="LALR(1) Parsing Table"
                         type="SLR1"
                         data={lalrTable.table}
                         grammar={parsedGrammar}
@@ -389,24 +582,36 @@ function SolverContent() {
                         </Tooltip>
                       </div>
                       <div className="flex gap-1 bg-muted/20 p-0.5 rounded-md">
-                        <Button
-                          variant={treeType === "LL1" ? "secondary" : "ghost"}
-                          size="sm"
-                          onClick={() => setTreeType("LL1")}
-                          disabled={!ll1Table || ll1Table.conflicts.length > 0}
-                          className="h-7 text-xs"
-                        >
-                          LL(1)
-                        </Button>
-                        <Button
-                          variant={treeType === "LR" ? "secondary" : "ghost"}
-                          size="sm"
-                          onClick={() => setTreeType("LR")}
-                          disabled={!slrTable}
-                          className="h-7 text-xs"
-                        >
-                          LR(1)
-                        </Button>
+                        {(["LL1", "SLR1", "CLR1", "LALR1"] as const)
+                          .filter((type) => selectedParsers.includes(type))
+                          .map((type) => {
+                            let disabled = true;
+                            if (type === "LL1")
+                              disabled =
+                                !ll1Table || ll1Table.conflicts.length > 0;
+                            else if (type === "SLR1") disabled = !slrTable;
+                            else if (type === "CLR1") disabled = !clrTable;
+                            else if (type === "LALR1") disabled = !lalrTable;
+
+                            return (
+                              <Button
+                                key={type}
+                                variant={
+                                  treeType === type ? "secondary" : "ghost"
+                                }
+                                size="sm"
+                                onClick={() =>
+                                  setTreeType(
+                                    type as "LL1" | "SLR1" | "CLR1" | "LALR1",
+                                  )
+                                }
+                                disabled={disabled}
+                                className="h-7 text-xs"
+                              >
+                                {type.replace("1", "(1)")}
+                              </Button>
+                            );
+                          })}
                       </div>
                     </div>
                     <div className="flex-1 relative">
@@ -434,33 +639,52 @@ function SolverContent() {
                         </Tooltip>
                       </div>
                       <div className="flex gap-1 bg-muted/20 p-0.5 rounded-md">
-                        <Button
-                          variant={
-                            automataType === "LR0" ? "secondary" : "ghost"
-                          }
-                          size="sm"
-                          onClick={() => setAutomataType("LR0")}
-                          disabled={!canonicalCollection}
-                          className="h-7 text-xs"
-                        >
-                          LR(0) Core
-                        </Button>
-                        <Button
-                          variant={
-                            automataType === "LALR1" ? "secondary" : "ghost"
-                          }
-                          size="sm"
-                          onClick={() => setAutomataType("LALR1")}
-                          disabled={!lalrTable?.collection}
-                          className="h-7 text-xs"
-                        >
-                          LALR(1) Merged
-                        </Button>
+                        {selectedParsers.includes("SLR1") && (
+                          <Button
+                            variant={
+                              automataType === "LR0" ? "secondary" : "ghost"
+                            }
+                            size="sm"
+                            onClick={() => setAutomataType("LR0")}
+                            disabled={!canonicalCollection}
+                            className="h-7 text-xs"
+                          >
+                            LR(0) Core (For SLR)
+                          </Button>
+                        )}
+                        {selectedParsers.includes("CLR1") && (
+                          <Button
+                            variant={
+                              automataType === "LR1" ? "secondary" : "ghost"
+                            }
+                            size="sm"
+                            onClick={() => setAutomataType("LR1")}
+                            disabled={!clrTable?.collection}
+                            className="h-7 text-xs"
+                          >
+                            LR(1) Automata (For CLR)
+                          </Button>
+                        )}
+                        {selectedParsers.includes("LALR1") && (
+                          <Button
+                            variant={
+                              automataType === "LALR1" ? "secondary" : "ghost"
+                            }
+                            size="sm"
+                            onClick={() => setAutomataType("LALR1")}
+                            disabled={!lalrTable?.collection}
+                            className="h-7 text-xs"
+                          >
+                            LALR(1) Merged
+                          </Button>
+                        )}
                       </div>
                     </div>
                     <div className="flex-1 relative">
                       {automataType === "LR0" && canonicalCollection ? (
                         <AutomataGraph collection={canonicalCollection} />
+                      ) : automataType === "LR1" && clrTable?.collection ? (
+                        <AutomataGraph collection={clrTable.collection} />
                       ) : automataType === "LALR1" && lalrTable?.collection ? (
                         <AutomataGraph collection={lalrTable.collection} />
                       ) : (
