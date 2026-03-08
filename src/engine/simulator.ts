@@ -1,4 +1,4 @@
-import { ParsingStep, ParsingTable, SLRTable } from "./types";
+import { ParsingStep, ParsingTable, LRTable } from "./types";
 
 /**
  * Simulates LL(1) parsing process step-by-step.
@@ -74,7 +74,7 @@ export function simulateLL1(
   return steps;
 }
 
-export function simulateLR(input: string[], table: SLRTable): ParsingStep[] {
+export function simulateLR(input: string[], table: LRTable): ParsingStep[] {
   const steps: ParsingStep[] = [];
   const stack: { state: number; symbol: string | null }[] = [
     { state: 0, symbol: null },
@@ -91,17 +91,19 @@ export function simulateLR(input: string[], table: SLRTable): ParsingStep[] {
 
     const action = table.action[currentState]?.[currentToken];
 
-    // Snapshot
-    steps.push({
-      stack: stack.map((s) =>
-        s.symbol ? `${s.symbol} ${s.state}` : `${s.state}`,
-      ),
-      input: [...inputBuffer],
-      action: action || "Error",
-      explanation: action
-        ? undefined
-        : `No action allowed for state ${currentState} on '${currentToken}'`,
-    });
+    // Only snapshot for non-accept actions to avoid duplicate Accept entries
+    if (action !== "acc") {
+      steps.push({
+        stack: stack.map((s) =>
+          s.symbol ? `${s.symbol} ${s.state}` : `${s.state}`,
+        ),
+        input: [...inputBuffer],
+        action: action || "Error",
+        explanation: action
+          ? undefined
+          : `No action allowed for state ${currentState} on '${currentToken}'`,
+      });
+    }
 
     if (!action) break;
 

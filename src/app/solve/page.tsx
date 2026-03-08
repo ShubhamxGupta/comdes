@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { problems } from "@/data/problems";
 import { useGrammarStore } from "@/store/useGrammarStore";
@@ -21,13 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { AlertCircle, Play, Save, Wand2 } from "lucide-react";
+import { AlertCircle, Play, Share2, Wand2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -42,7 +43,7 @@ import { ParserType, ParsingStep } from "@/engine/types";
 import { ParseTreeVisualizer } from "@/components/visualizer/ParseTree";
 import { ParsingTableVisualizer } from "@/components/visualizer/ParsingTable";
 import { AutomataGraph } from "@/components/visualizer/AutomataGraph";
-import { useSavedGrammars } from "@/hooks/useSavedGrammars";
+
 import { eliminateLeftRecursion, leftFactor } from "@/engine/transformations";
 
 function SolverContent() {
@@ -82,76 +83,177 @@ function SolverContent() {
 
   const searchParams = useSearchParams();
   const problemId = searchParams.get("problemId");
+  const sharedGrammar = searchParams.get("g");
+  const sharedTest = searchParams.get("t");
 
   useEffect(() => {
+    // Load from shared URL params (base64 encoded)
+    if (sharedGrammar) {
+      try {
+        const grammar = atob(sharedGrammar);
+        const test = sharedTest ? atob(sharedTest) : "";
+        setRawInput(grammar);
+        setTestInput(test);
+        setTimeout(() => parse(), 50);
+        return;
+      } catch {
+        // Invalid base64, ignore
+      }
+    }
+    // Load from problem ID
     if (problemId) {
       const dbProblem = problems.find((p) => p.id === problemId);
       if (dbProblem) {
         setRawInput(dbProblem.grammar);
         setTestInput(dbProblem.testInput);
-        // Delay parsing slightly to allow store bindings to update
-        setTimeout(() => {
-          parse();
-        }, 50);
+        setTimeout(() => parse(), 50);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problemId]);
+  }, [problemId, sharedGrammar, sharedTest, setRawInput, setTestInput, parse]);
 
-  const { saveGrammar } = useSavedGrammars();
+  const [isComputing, setIsComputing] = useState(false);
 
-  const handleSave = () => {
+  const handleSolve = useCallback(() => {
+    if (!rawInput.trim() || isComputing) return;
+    setIsComputing(true);
+    setTimeout(() => {
+      try {
+        parse();
+      } finally {
+        setIsComputing(false);
+      }
+    }, 50);
+  }, [rawInput, isComputing, parse]);
+
+  // Keyboard shortcut: Ctrl+Enter / Cmd+Enter to solve
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleSolve();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleSolve]);
+
+  const handleShare = useCallback(() => {
     if (!rawInput.trim()) return;
-    const name = window.prompt("Enter a name for this grammar:");
-    if (name) {
-      saveGrammar(name, rawInput, testInput);
-      window.alert("Grammar saved successfully!");
+    try {
+      const g = btoa(rawInput);
+      const t = testInput.trim() ? btoa(testInput) : "";
+      const params = new URLSearchParams();
+      params.set("g", g);
+      if (t) params.set("t", t);
+      const url = `${window.location.origin}/solve?${params.toString()}`;
+
+      // Use clipboard API with fallback for non-secure contexts
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard
+          .writeText(url)
+          .then(() => {
+            toast.success("Link Copied!", {
+              description:
+                "Shareable grammar URL has been copied to your clipboard.",
+            });
+          })
+          .catch(() => {
+            copyFallback(url);
+          });
+      } else {
+        copyFallback(url);
+      }
+    } catch {
+      toast.error("Failed to generate share link.");
+    }
+  }, [rawInput, testInput]);
+
+  const copyFallback = (text: string) => {
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      toast.success("Link Copied!", {
+        description: "Shareable grammar URL has been copied to your clipboard.",
+      });
+    } catch {
+      // If even fallback fails, show the URL so user can copy manually
+      toast.info("Share Link", {
+        description: text,
+        duration: 10000,
+      });
     }
   };
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4">
-      <div className="flex justify-between items-center pb-2 border-b">
-        <h1 className="text-2xl font-bold tracking-tight">Grammar Solver</h1>
-        <div className="flex gap-2">
+    <div className="h-full flex flex-col p-6 gap-6 bg-muted/5">
+      <div className="flex justify-between items-center pb-4 border-b">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+            Grammar Solver
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1.5 font-medium">
+            Parse context-free grammars with LL(1), SLR(1), CLR(1) & LALR(1)
+          </p>
+        </div>
+        <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={handleSave}
+            onClick={handleShare}
             disabled={!rawInput.trim()}
+            className="shadow-sm font-medium"
           >
-            <Save className="mr-2 h-4 w-4" /> Save
+            <Share2 className="mr-2 h-4 w-4" /> Share
           </Button>
-          <Button onClick={parse} disabled={!rawInput.trim()}>
-            <Play className="mr-2 h-4 w-4" /> Solve
+          <Button
+            onClick={handleSolve}
+            disabled={!rawInput.trim() || isComputing}
+            size="lg"
+            className="shadow-sm font-semibold tracking-wide min-w-[120px]"
+          >
+            {isComputing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Computing...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" /> Solve
+              </>
+            )}
           </Button>
         </div>
       </div>
 
       <ResizablePanelGroup
         direction="horizontal"
-        className="flex-1 border rounded-lg overflow-hidden"
+        className="flex-1 border rounded-xl overflow-hidden shadow-sm bg-background"
       >
         {/* Left Panel: Input */}
         <ResizablePanel
-          defaultSize={30}
-          minSize={20}
-          className="bg-background flex flex-col p-4 gap-4"
+          defaultSize={35}
+          minSize={25}
+          className="flex flex-col p-4 gap-4"
         >
           <div className="flex-1 flex flex-col gap-2">
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <Label
                   htmlFor="grammar-input"
-                  className="text-sm font-semibold"
+                  className="text-sm font-bold uppercase tracking-wider text-muted-foreground"
                 >
                   Grammar Rules
                 </Label>
-                <Tooltip>
+                <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    <Info className="h-[14px] w-[14px] text-muted-foreground cursor-help" />
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>
+                  <TooltipContent className="max-w-xs shadow-md border-muted">
+                    <p className="text-xs leading-relaxed">
                       Enter the production rules for your Context-Free Grammar.
                       The first rule defines the Start Symbol.
                     </p>
@@ -161,17 +263,21 @@ function SolverContent() {
               <div className="flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-7 text-xs">
-                      <Wand2 className="mr-2 h-3 w-3" /> Transform
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px] font-semibold tracking-wide uppercase"
+                    >
+                      <Wand2 className="mr-1.5 h-3 w-3" /> Transform
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="start">
                     <DropdownMenuItem
                       onClick={() => {
                         try {
                           setRawInput(eliminateLeftRecursion(rawInput));
                         } catch (e) {
-                          alert(
+                          toast.error(
                             e instanceof Error
                               ? e.message
                               : "Failed to eliminate left recursion.",
@@ -187,7 +293,7 @@ function SolverContent() {
                         try {
                           setRawInput(leftFactor(rawInput));
                         } catch (e) {
-                          alert(
+                          toast.error(
                             e instanceof Error
                               ? e.message
                               : "Failed to left factor grammar.",
@@ -209,80 +315,91 @@ function SolverContent() {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-[140px] h-7 text-xs">
+                  <SelectTrigger className="w-[160px] h-7 text-xs">
                     <SelectValue placeholder="Load Example" />
                   </SelectTrigger>
                   <SelectContent>
-                    {problems.map((p) => (
-                      <SelectItem key={p.id} value={p.id} className="text-xs">
-                        {p.title}
-                      </SelectItem>
-                    ))}
+                    {problems
+                      .filter((p) => p.recommendedSolver === "Syntax")
+                      .map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-xs">
+                          {p.title}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <Textarea
               id="grammar-input"
-              placeholder="E -> E + T | T&#10;T -> T * F | F&#10;F -> ( E ) | id"
-              className="flex-1 font-mono text-sm resize-none"
+              placeholder={"E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id"}
+              className="flex-1 font-mono text-[13px] leading-relaxed resize-none tracking-tight p-3 bg-muted/10 border-muted focus-visible:ring-primary/20"
               value={rawInput}
               onChange={(e) => setRawInput(e.target.value)}
               spellCheck={false}
             />
-            <p className="text-xs text-muted-foreground">
-              Enter production rules. Use &apos;-&gt;&apos; or &apos;:&apos; for
-              assignment. &apos;|&apos; for alternatives. &apos;epsilon&apos; or
-              &apos;ε&apos; for empty.
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Use &apos;-&gt;&apos; or &apos;:&apos; for assignment.
+              &apos;|&apos; for alternatives. &apos;ε&apos; for empty.
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Label htmlFor="test-string">
-                Test String (for visualization)
+              <Label
+                htmlFor="test-input"
+                className="text-sm font-bold uppercase tracking-wider text-muted-foreground"
+              >
+                Test String
               </Label>
-              <Tooltip>
+              <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  <Info className="h-[14px] w-[14px] text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>
-                    A sequence of terminal tokens separated by spaces to trace
-                    through the generated Parse Tree.
+                <TooltipContent className="max-w-xs shadow-md border-muted">
+                  <p className="text-xs">
+                    Input a sequence of terminals separated by spaces to test
+                    against the generated parsing tables.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </div>
             <Input
-              id="test-string"
+              id="test-input"
               value={testInput}
               onChange={(e) => setTestInput(e.target.value)}
               placeholder="id + id * id"
-              className="font-mono text-sm"
+              className="font-mono text-[13px] p-3 h-10 bg-muted/10 border-muted focus-visible:ring-primary/20"
               suppressHydrationWarning
             />
           </div>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <Label>Parsers to Generate</Label>
-              <Tooltip>
+          <div className="flex flex-col gap-2 bg-background/50 p-3 border rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                Parsers to Generate
+              </Label>
+              <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  <Info className="h-[14px] w-[14px] text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>
-                    Select which algorithms to compile. LALR(1) handles the most
-                    complex grammars but takes the most compute time.
+                <TooltipContent className="max-w-xs shadow-md border-muted">
+                  <p className="text-xs leading-relaxed">
+                    Select which algorithms to compile.{" "}
+                    <code className="text-primary font-bold">LALR(1)</code>{" "}
+                    handles the most complex grammars but takes the most compute
+                    time.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {(["LL1", "SLR1", "CLR1", "LALR1"] as ParserType[]).map(
                 (type) => (
-                  <div key={type} className="flex items-center space-x-2">
+                  <div
+                    key={type}
+                    className="flex items-center space-x-3 bg-muted/20 hover:bg-muted/40 transition-colors p-2 rounded-lg border border-transparent hover:border-border"
+                  >
                     <Checkbox
                       id={`parser-${type}`}
                       checked={selectedParsers.includes(type)}
@@ -298,7 +415,7 @@ function SolverContent() {
                     />
                     <Label
                       htmlFor={`parser-${type}`}
-                      className="font-normal cursor-pointer select-none"
+                      className="font-semibold cursor-pointer select-none text-[13px] leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       {type}
                     </Label>
@@ -306,40 +423,76 @@ function SolverContent() {
                 ),
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Select which parsing tables to build. LALR(1) is recommended for
-              complex grammars.
+            <p className="text-[11px] text-muted-foreground">
+              Select which parsing tables to build. LALR(1) for complex
+              grammars.
             </p>
           </div>
 
           {error && (
-            <Alert variant="destructive">
+            <Alert
+              variant="destructive"
+              className="bg-destructive/10 border-destructive/20 text-destructive shadow-sm mt-4"
+            >
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertTitle className="font-bold">Error Processing</AlertTitle>
+              <AlertDescription className="text-xs font-mono break-all mt-1 opacity-90">
+                {error}
+              </AlertDescription>
             </Alert>
           )}
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        <ResizableHandle
+          withHandle
+          className="bg-border/50 transition-colors hover:bg-primary/20 active:bg-primary"
+        />
 
         {/* Right Panel: Output */}
-        <ResizablePanel defaultSize={70} className="bg-muted/10 p-4">
+        <ResizablePanel
+          defaultSize={70}
+          className="bg-muted/30 p-6 flex flex-col"
+        >
           {parsedGrammar ? (
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
               className="h-full flex flex-col"
             >
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="sets">FIRST & FOLLOW</TabsTrigger>
-                <TabsTrigger value="automata">Automata (LR)</TabsTrigger>
-                <TabsTrigger value="table">Parsing Table</TabsTrigger>
-                <TabsTrigger value="steps">Parsing Steps</TabsTrigger>
-                <TabsTrigger value="tree">Parse Tree</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-5 p-1 bg-muted/50 border shadow-sm rounded-lg mb-4">
+                <TabsTrigger
+                  value="sets"
+                  className="rounded-md font-medium text-[13px] transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  FIRST & FOLLOW
+                </TabsTrigger>
+                <TabsTrigger
+                  value="automata"
+                  className="rounded-md font-medium text-[13px] transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Automata (LR)
+                </TabsTrigger>
+                <TabsTrigger
+                  value="table"
+                  className="rounded-md font-medium text-[13px] transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Parsing Table
+                </TabsTrigger>
+                <TabsTrigger
+                  value="steps"
+                  className="rounded-md font-medium text-[13px] transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Parsing Steps
+                </TabsTrigger>
+                <TabsTrigger
+                  value="tree"
+                  className="rounded-md font-medium text-[13px] transition-all data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                >
+                  Parse Tree
+                </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 mt-4 overflow-auto bg-background rounded-md border p-4">
+              <div className="flex-1 mt-4 overflow-auto bg-background rounded-xl border p-4 shadow-sm relative">
                 <TabsContent value="steps" className="h-full m-0 relative">
                   <div className="flex flex-col h-full">
                     <div className="flex justify-start p-2 border-b gap-2 items-center">
@@ -682,11 +835,20 @@ function SolverContent() {
                     </div>
                     <div className="flex-1 relative">
                       {automataType === "LR0" && canonicalCollection ? (
-                        <AutomataGraph collection={canonicalCollection} />
+                        <AutomataGraph
+                          collection={canonicalCollection}
+                          nonTerminals={parsedGrammar?.nonTerminals}
+                        />
                       ) : automataType === "LR1" && clrTable?.collection ? (
-                        <AutomataGraph collection={clrTable.collection} />
+                        <AutomataGraph
+                          collection={clrTable.collection}
+                          nonTerminals={parsedGrammar?.nonTerminals}
+                        />
                       ) : automataType === "LALR1" && lalrTable?.collection ? (
-                        <AutomataGraph collection={lalrTable.collection} />
+                        <AutomataGraph
+                          collection={lalrTable.collection}
+                          nonTerminals={parsedGrammar?.nonTerminals}
+                        />
                       ) : (
                         <div className="flex items-center justify-center h-full text-muted-foreground">
                           Please run the engine and select a valid Automata

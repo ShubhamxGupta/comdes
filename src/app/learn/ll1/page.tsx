@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -148,6 +149,97 @@ export default function LL1Page() {
                 </li>
               </ul>
             </div>
+
+            <div className="mt-10 border-t pt-8">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
+                  2
+                </span>
+                Step-by-Step: Constructing the Sets
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Let's calculate the FIRST and FOLLOW sets for a simple grammar:{" "}
+                <code>S &rarr; a S a | b S b | c</code>
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-muted/30 border rounded-lg p-5">
+                  <h4 className="font-bold text-sm mb-3 text-foreground/80 uppercase tracking-widest border-b pb-2">
+                    Computing FIRST(S)
+                  </h4>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex gap-3">
+                      <span className="font-mono bg-background px-2 py-1 rounded border text-xs whitespace-nowrap h-fit">
+                        S &rarr; a S a
+                      </span>
+                      <span>
+                        The first symbol is the terminal <code>a</code>. Add{" "}
+                        <code>a</code> to FIRST(S).
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="font-mono bg-background px-2 py-1 rounded border text-xs whitespace-nowrap h-fit">
+                        S &rarr; b S b
+                      </span>
+                      <span>
+                        The first symbol is the terminal <code>b</code>. Add{" "}
+                        <code>b</code> to FIRST(S).
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="font-mono bg-background px-2 py-1 rounded border text-xs whitespace-nowrap h-fit">
+                        S &rarr; c
+                      </span>
+                      <span>
+                        The first symbol is the terminal <code>c</code>. Add{" "}
+                        <code>c</code> to FIRST(S).
+                      </span>
+                    </li>
+                  </ul>
+                  <div className="mt-4 p-3 bg-primary/10 rounded font-mono text-center font-bold text-primary">
+                    FIRST(S) = {"{"} a, b, c {"}"}
+                  </div>
+                </div>
+
+                <div className="bg-muted/30 border rounded-lg p-5">
+                  <h4 className="font-bold text-sm mb-3 text-foreground/80 uppercase tracking-widest border-b pb-2">
+                    Computing FOLLOW(S)
+                  </h4>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex gap-3">
+                      <span className="font-mono bg-background px-2 py-1 rounded border text-xs whitespace-nowrap h-fit">
+                        Rule 1
+                      </span>
+                      <span>
+                        S is the Start Symbol, so we immediately add the EOF
+                        marker <code>$</code> to FOLLOW(S).
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="font-mono bg-background px-2 py-1 rounded border text-xs whitespace-nowrap h-fit">
+                        S &rarr; a S a
+                      </span>
+                      <span>
+                        Look at S on the RHS. What follows S? The terminal{" "}
+                        <code>a</code>. Add <code>a</code> to FOLLOW(S).
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="font-mono bg-background px-2 py-1 rounded border text-xs whitespace-nowrap h-fit">
+                        S &rarr; b S b
+                      </span>
+                      <span>
+                        Look at S on the RHS. What follows S? The terminal{" "}
+                        <code>b</code>. Add <code>b</code> to FOLLOW(S).
+                      </span>
+                    </li>
+                  </ul>
+                  <div className="mt-4 p-3 bg-primary/10 rounded font-mono text-center font-bold text-primary">
+                    FOLLOW(S) = {"{"} $, a, b {"}"}
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -187,6 +279,31 @@ export default function LL1Page() {
               </li>
             </ul>
           </CardContent>
+        </Card>
+
+        <Card className="mb-8 overflow-hidden border-emerald-500/20 shadow-md">
+          <div className="bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-background p-6">
+            <h3 className="text-xl font-bold flex items-center gap-2 mb-2 text-foreground">
+              <Play className="h-5 w-5 text-emerald-500" />
+              Interactive Demo
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              See LL(1) parsing in action. We've prepared a simple,
+              LL(1)-compliant palindrome grammar. Click below to open it in the
+              Syntax Engine and watch the FIRST/FOLLOW sets and Predictive
+              Parsing Table generate instantly.
+            </p>
+            <Link
+              href={`/solve?g=${btoa("S -> a S a | b S b | c")}&t=${btoa("a b c b a")}`}
+            >
+              <Button
+                size="lg"
+                className="gap-2 shadow-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Play className="h-4 w-4 fill-current" /> Try LL(1) Solver
+              </Button>
+            </Link>
+          </div>
         </Card>
       </div>
     </div>

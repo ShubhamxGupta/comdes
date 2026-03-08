@@ -228,11 +228,7 @@ export const useGrammarStore = create<GrammarState>((set, get) => ({
       }
     }
 
-    // LR Simulation
-    let lrSteps: ParsingStep[] = [];
-    let lrTree = null;
-
-    // Choose strongest available table for simulation
+    // LR Simulation for each parser type
     const { clrTable, lalrTable } = get();
 
     let slrSteps: ParsingStep[] = [];

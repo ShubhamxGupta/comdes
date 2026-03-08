@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -94,6 +94,237 @@ export default function GrammarBasicsPage() {
               S -&gt; A a b <br />A -&gt; ε
             </div>
           </CardContent>
+        </Card>
+
+        <Card className="mb-10 border-primary/10 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
+                1
+              </span>
+              Step-by-Step Example: Derivations
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 relative z-10">
+            <p className="text-muted-foreground">
+              A <strong>derivation</strong> is the sequence of rule applications
+              that transforms the Start Symbol into a string of pure terminals.
+              Let's derive the string <code>id + id * id</code> using the
+              standard arithmetic grammar.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              <div className="bg-muted/30 border rounded-lg p-5">
+                <h4 className="font-bold text-sm mb-3 text-foreground/80 uppercase tracking-widest border-b pb-2">
+                  Leftmost Derivation
+                </h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Always expand the <em>leftmost</em> non-terminal first.
+                </p>
+                <div className="font-mono text-sm space-y-2">
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium">
+                      E
+                    </span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-primary font-bold">E</span> + T
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-primary font-bold">T</span> + T
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-primary font-bold">F</span> + T
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    + <span className="text-primary font-bold">T</span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    + <span className="text-primary font-bold">T</span> * F
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    + <span className="text-primary font-bold">F</span> * F
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    +{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    * <span className="text-primary font-bold">F</span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    +{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-muted/30 border rounded-lg p-5">
+                <h4 className="font-bold text-sm mb-3 text-foreground/80 uppercase tracking-widest border-b pb-2">
+                  Rightmost Derivation
+                </h4>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Always expand the <em>rightmost</em> non-terminal first (used
+                  by Bottom-Up parsers).
+                </p>
+                <div className="font-mono text-sm space-y-2">
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium">
+                      E
+                    </span>
+                    <span className="text-muted-foreground/30">⇒</span>E +{" "}
+                    <span className="text-primary font-bold">T</span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>E + T *{" "}
+                    <span className="text-primary font-bold">F</span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>E +{" "}
+                    <span className="text-primary font-bold">T</span> *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>E +{" "}
+                    <span className="text-primary font-bold">F</span> *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-primary font-bold">E</span> +{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-primary font-bold">T</span> +{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-primary font-bold">F</span> +{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                  <div className="flex gap-4 items-center group">
+                    <span className="w-8 text-right text-muted-foreground font-medium"></span>
+                    <span className="text-muted-foreground/30">⇒</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    +{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>{" "}
+                    *{" "}
+                    <span className="text-green-600 dark:text-green-400">
+                      id
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-sm font-medium">
+                Notice how both yield the same final string, but construct the
+                tree in different orders!
+              </span>
+              <Link
+                href={`/solve?g=${btoa("E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id")}&t=${btoa("id + id * id")}`}
+                className="w-full sm:w-auto"
+              >
+                <Button size="sm" className="w-full gap-2">
+                  <Play className="h-4 w-4" /> Watch the Tree Build Live
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="mb-8 overflow-hidden border-primary/20 shadow-md">
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-background p-6">
+            <h3 className="text-xl font-bold flex items-center gap-2 mb-2 text-foreground">
+              <Play className="h-5 w-5 text-primary" />
+              Interactive Demo
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Ready to see a context-free grammar in action? Click below to open
+              the Arithmetic Expression grammar directly in the Syntax Engine.
+              We'll automatically generate the First/Follow sets and Parsing
+              Tables for you.
+            </p>
+            <Link
+              href={`/solve?g=${btoa("E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id")}&t=${btoa("id + id * id")}`}
+            >
+              <Button
+                size="lg"
+                className="gap-2 shadow-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Play className="h-4 w-4 fill-current" /> Try It Out in Solver
+              </Button>
+            </Link>
+          </div>
         </Card>
       </div>
     </div>

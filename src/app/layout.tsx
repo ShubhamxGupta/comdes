@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -75,6 +76,7 @@ export default function RootLayout({
             </div>
           </TooltipProvider>
         </ThemeProvider>
+        <Toaster richColors closeButton position="top-center" />
         <Analytics />
       </body>
     </html>

@@ -1,5 +1,6 @@
 import { Node, Edge } from "reactflow";
 import { ParsingTable, ParsingStep } from "./types";
+import dagre from "dagre";
 
 interface TreeNode {
   id: string;
@@ -93,41 +94,31 @@ export function buildParseTree(
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  // Simple Reingold-Tilford-ish layout (simplified)
-  let xCounter = 0;
-
-  function layout(node: TreeNode, depth: number) {
-    if (node.children.length === 0) {
-      node.x = xCounter * 60;
-      xCounter++;
-    } else {
-      node.children.forEach((child) => layout(child, depth + 1));
-      // Center over children
-      const firstChild = node.children[0];
-      const lastChild = node.children[node.children.length - 1];
-      node.x = (firstChild.x! + lastChild.x!) / 2;
-    }
-    node.y = depth * 80;
-  }
-
-  layout(root, 0);
-
   function traverse(node: TreeNode) {
-    if (!node.x && node.x !== 0) node.x = 0;
-    if (!node.y && node.y !== 0) node.y = 0;
-
     nodes.push({
       id: node.id,
-      position: { x: node.x, y: node.y },
+      position: { x: 0, y: 0 },
       data: { label: node.label },
       type: "default",
       style: {
-        background: "#fff",
-        border: "1px solid #777",
-        borderRadius: "5px",
-        width: 50,
+        background:
+          node.children.length === 0
+            ? "hsl(var(--muted) / 0.5)"
+            : "hsl(var(--background))",
+        border:
+          node.children.length === 0
+            ? "1px dashed hsl(var(--border))"
+            : "1px solid hsl(var(--border) / 0.8)",
+        borderRadius: "8px",
+        minWidth: 50,
+        padding: "8px 12px",
         textAlign: "center",
-        fontWeight: node.children.length > 0 ? "bold" : "normal",
+        color:
+          node.children.length === 0
+            ? "hsl(var(--muted-foreground))"
+            : "hsl(var(--foreground))",
+        fontWeight: node.children.length > 0 ? "700" : "500",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
       },
     });
 
@@ -143,6 +134,32 @@ export function buildParseTree(
   }
 
   traverse(root);
+
+  if (nodes.length === 0) return { nodes: [], edges: [] };
+
+  // Assign Dagre Layout
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: "TB", nodesep: 50, ranksep: 80 });
+
+  nodes.forEach((node) => {
+    // estimate width roughly based on label length
+    const estimatedWidth = Math.max(50, node.data.label.length * 10 + 24);
+    dagreGraph.setNode(node.id, { width: estimatedWidth, height: 40 });
+  });
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    node.position = {
+      x: nodeWithPosition.x - 30, // center offset (width/2)
+      y: nodeWithPosition.y - 20, // center offset (height/2)
+    };
+  });
 
   return { nodes, edges };
 }
@@ -219,51 +236,197 @@ export function buildLRTree(
   const nodes: Node[] = [];
   const edges: Edge[] = [];
 
-  // Better Layout: Assign X based on in-order traversal (leaf order)
-  let leafCounter = 0;
-  const assignLeafX = (node: TreeNode) => {
-    if (!node.children || node.children.length === 0) {
-      node.x = leafCounter * 80;
-      leafCounter++;
-    } else {
-      node.children.forEach((c: TreeNode) => assignLeafX(c));
-      // Center parent
-      const first = node.children[0];
-      const last = node.children[node.children.length - 1];
-      const firstX = first.x ?? 0;
-      const lastX = last.x ?? 0;
-      node.x = (firstX + lastX) / 2;
-    }
-  };
-
-  const assignY = (node: TreeNode, depth: number) => {
-    node.y = depth * 100;
-    if (node.children) {
-      node.children.forEach((c: TreeNode) => assignY(c, depth + 1));
-    }
-  };
-
-  assignLeafX(root);
-  assignY(root, 0);
-
   const traverseFinal = (node: TreeNode) => {
     nodes.push({
       id: node.id,
-      position: { x: node.x ?? 0, y: node.y ?? 0 },
+      position: { x: 0, y: 0 },
       data: { label: node.label },
       type: "default",
       style: {
-        background: "#fff",
-        border: "1px solid #777",
-        borderRadius: "5px",
-        width: 50,
+        background:
+          node.children.length === 0
+            ? "hsl(var(--muted) / 0.5)"
+            : "hsl(var(--background))",
+        border:
+          node.children.length === 0
+            ? "1px dashed hsl(var(--border))"
+            : "1px solid hsl(var(--border) / 0.8)",
+        borderRadius: "8px",
+        minWidth: 50,
+        padding: "8px 12px",
         textAlign: "center",
-        fontWeight:
-          node.children && node.children.length > 0 ? "bold" : "normal",
+        color:
+          node.children.length === 0
+            ? "hsl(var(--muted-foreground))"
+            : "hsl(var(--foreground))",
+        fontWeight: node.children.length > 0 ? "700" : "500",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
       },
     });
     if (node.children) {
-      node.children.forEach((c: TreeNode) => {
+      node.children.forEach((c) => {
+        edges.push({
+          id: `e-${node.id}-${c.id}`,
+          source: node.id,
+          target: c.id,
+          type: "smoothstep",
+        });
+        traverseFinal(c);
+      });
+    }
+  };
+
+  if (root) traverseFinal(root);
+
+  if (nodes.length === 0) return { nodes: [], edges: [] };
+
+  // Assign Dagre Layout
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: "TB", nodesep: 50, ranksep: 80 });
+
+  nodes.forEach((node) => {
+    const estimatedWidth = Math.max(50, node.data.label.length * 10 + 24);
+    dagreGraph.setNode(node.id, { width: estimatedWidth, height: 40 });
+  });
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    node.position = {
+      x: nodeWithPosition.x - 30, // center offset (width/2)
+      y: nodeWithPosition.y - 20, // center offset (height/2)
+    };
+  });
+
+  return { nodes, edges };
+}
+
+import { SDTStep } from "./semantic";
+
+export function buildSDTTree(
+  steps: SDTStep[],
+  grammar: { startSymbol: string },
+): { nodes: Node[]; edges: Edge[] } {
+  let nodeIdCounter = 0;
+
+  interface SDTTreeNode {
+    id: string;
+    label: string;
+    val?: any; // Semantic value
+    children: SDTTreeNode[];
+    x?: number;
+    y?: number;
+  }
+
+  const nodeStack: SDTTreeNode[] = [];
+
+  for (const step of steps) {
+    const action = step.action;
+
+    if (action.startsWith("Shift")) {
+      const match = action.match(/Shift (.*)/);
+      if (match) {
+        const symbol = match[1].trim();
+        if (symbol && symbol !== "$") {
+          // Find the value pushed to semantic stack for this shifted token
+          // In semantic.ts, evaluatedValue isn't set for Shift, but the value is pushed to semanticStack
+          // Wait, we need to know the value. It's the top of semanticStack
+          const val =
+            step.semanticStack.length > 0
+              ? step.semanticStack[step.semanticStack.length - 1]
+              : undefined;
+          const node: SDTTreeNode = {
+            id: `sdt-${nodeIdCounter++}`,
+            label: symbol,
+            val,
+            children: [],
+          };
+          nodeStack.push(node);
+        }
+      }
+    } else if (action.startsWith("Reduce")) {
+      const match = action.match(/Reduce (.*) -> (.*)/);
+      if (match) {
+        const lhs = match[1].trim();
+        const rhsStr = match[2].trim();
+        const isEpsilon = rhsStr === "" || rhsStr === "ε";
+        const rhsLength = isEpsilon ? 0 : rhsStr.split(" ").length;
+
+        const children: SDTTreeNode[] = [];
+        for (let i = 0; i < rhsLength; i++) {
+          const child = nodeStack.pop();
+          if (child) children.unshift(child);
+        }
+
+        if (isEpsilon) {
+          children.push({
+            id: `sdt-${nodeIdCounter++}`,
+            label: "ε",
+            children: [],
+          });
+        }
+
+        // The evaluated value is in step.evaluatedValue
+        const newNode: SDTTreeNode = {
+          id: `sdt-${nodeIdCounter++}`,
+          label: lhs,
+          val: step.evaluatedValue,
+          children: children,
+        };
+        nodeStack.push(newNode);
+      }
+    }
+  }
+
+  const root =
+    nodeStack.length > 0
+      ? nodeStack[0]
+      : { id: "sdt-root", label: grammar.startSymbol, children: [] };
+
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  const traverseFinal = (node: SDTTreeNode) => {
+    const displayLabel =
+      node.val !== undefined
+        ? `${node.label}\n(val: ${typeof node.val === "number" ? Math.round(node.val * 100) / 100 : node.val})`
+        : node.label;
+
+    nodes.push({
+      id: node.id,
+      position: { x: 0, y: 0 },
+      data: { label: displayLabel },
+      type: "default",
+      style: {
+        background:
+          node.val !== undefined
+            ? "hsl(var(--primary) / 0.1)"
+            : "hsl(var(--background))",
+        border:
+          node.val !== undefined
+            ? "2px solid hsl(var(--primary))"
+            : "1px solid hsl(var(--border) / 0.8)",
+        borderRadius: "8px",
+        minWidth: 80,
+        padding: "8px 12px",
+        textAlign: "center",
+        color:
+          node.val !== undefined
+            ? "hsl(var(--foreground))"
+            : "hsl(var(--muted-foreground))",
+        fontWeight:
+          node.children && node.children.length > 0 ? "bold" : "normal",
+        whiteSpace: "pre-line",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+      },
+    });
+    if (node.children) {
+      node.children.forEach((c) => {
         edges.push({
           id: `e-${node.id}-${c.id}`,
           source: node.id,
@@ -276,6 +439,34 @@ export function buildLRTree(
   };
 
   traverseFinal(root);
+
+  if (nodes.length === 0) return { nodes: [], edges: [] };
+
+  // Assign Dagre Layout
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  // Increase separation slightly more for SDT with long labels
+  dagreGraph.setGraph({ rankdir: "TB", nodesep: 60, ranksep: 80 });
+
+  nodes.forEach((node) => {
+    const lines = node.data.label.split("\n");
+    const maxLineLen = Math.max(...lines.map((l: string) => l.length));
+    const estimatedWidth = Math.max(80, maxLineLen * 9 + 20);
+    dagreGraph.setNode(node.id, { width: estimatedWidth, height: 50 });
+  });
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    node.position = {
+      x: nodeWithPosition.x - 50, // center offset (width/2)
+      y: nodeWithPosition.y - 30, // center offset (height/2)
+    };
+  });
 
   return { nodes, edges };
 }

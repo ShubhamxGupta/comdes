@@ -220,6 +220,7 @@ export function buildSLRTable(
   followSets: Map<string, Set<string>>,
 ): { table: LRTable; conflicts: string[]; collection: CanonicalCollection } {
   const collection = buildCanonicalCollection(grammar);
+  const augmentedStart = createAugmentedGrammar(grammar).startSymbol;
   const table: LRTable = { action: {}, goto: {} };
   const conflicts: string[] = [];
 
@@ -258,7 +259,7 @@ export function buildSLRTable(
       if (item.dotIndex === item.rhs.length) {
         // Item is [A -> alpha .]
         if (
-          item.lhs.endsWith("'") &&
+          item.lhs === augmentedStart &&
           item.rhs.length === 1 &&
           item.rhs[0] === grammar.startSymbol
         ) {
@@ -487,6 +488,7 @@ export function buildCLRTable(
   firstSets: FirstFollowSets,
 ): { table: LRTable; conflicts: string[]; collection: CanonicalCollection } {
   const collection = buildLR1Collection(grammar, firstSets);
+  const augmentedStart = createAugmentedGrammar(grammar).startSymbol;
   const table: LRTable = { action: {}, goto: {} };
   const conflicts: string[] = [];
 
@@ -518,7 +520,7 @@ export function buildCLRTable(
     state.items.forEach((item) => {
       if (item.dotIndex === item.rhs.length) {
         if (
-          item.lhs.endsWith("'") &&
+          item.lhs === augmentedStart &&
           item.rhs.length === 1 &&
           item.rhs[0] === grammar.startSymbol &&
           item.lookahead?.includes("$")
@@ -640,6 +642,7 @@ export function buildLALRTable(
 ): { table: LRTable; conflicts: string[]; collection: CanonicalCollection } {
   const lr1Collection = buildLR1Collection(grammar, firstSets);
   const lalrCollection = buildLALRCollection(lr1Collection);
+  const augmentedStart = createAugmentedGrammar(grammar).startSymbol;
 
   const table: LRTable = { action: {}, goto: {} };
   const conflicts: string[] = [];
@@ -672,7 +675,7 @@ export function buildLALRTable(
     state.items.forEach((item) => {
       if (item.dotIndex === item.rhs.length) {
         if (
-          item.lhs.endsWith("'") &&
+          item.lhs === augmentedStart &&
           item.rhs.length === 1 &&
           item.rhs[0] === grammar.startSymbol &&
           item.lookahead?.includes("$")

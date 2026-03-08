@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -7,29 +7,22 @@ import ReactFlow, {
   useEdgesState,
   ReactFlowProvider,
   useReactFlow,
+  Node,
+  Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useGrammarStore } from "@/store/useGrammarStore";
 
-interface ParseTreeProps {
-  type: "LL1" | "SLR1" | "CLR1" | "LALR1";
+interface AnnotatedParseTreeProps {
+  treeData: { nodes: Node[]; edges: Edge[] } | null;
 }
 
-function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
-  const { ll1ParseTree, slrParseTree, clrParseTree, lalrParseTree } =
-    useGrammarStore();
+function InnerAnnotatedParseTree({ treeData }: AnnotatedParseTreeProps) {
   const { fitView } = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   useEffect(() => {
-    let treeData = null;
-    if (type === "LL1") treeData = ll1ParseTree;
-    else if (type === "SLR1") treeData = slrParseTree;
-    else if (type === "CLR1") treeData = clrParseTree;
-    else if (type === "LALR1") treeData = lalrParseTree;
-
     if (!treeData) {
       setNodes([]);
       setEdges([]);
@@ -38,56 +31,46 @@ function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
 
     const { nodes: newNodes, edges: newEdges } = treeData;
 
-    // Read computed CSS colors from the DOM — hsl(var(...)) doesn't work in inline SVG styles
-    const rootStyles = getComputedStyle(document.documentElement);
-    const edgeColor = rootStyles.getPropertyValue("--muted-foreground").trim()
-      ? `oklch(${rootStyles.getPropertyValue("--muted-foreground").trim()})`
-      : "#888";
-    const bgColor = rootStyles.getPropertyValue("--background").trim()
-      ? `oklch(${rootStyles.getPropertyValue("--background").trim()})`
-      : "#fff";
-    const borderColor = rootStyles.getPropertyValue("--border").trim()
-      ? `oklch(${rootStyles.getPropertyValue("--border").trim()})`
-      : "#ddd";
-    const fgColor = rootStyles.getPropertyValue("--foreground").trim()
-      ? `oklch(${rootStyles.getPropertyValue("--foreground").trim()})`
-      : "#111";
+    // Resolve CSS variables at runtime since ReactFlow inline styles
+    // don't support hsl(var(--...)) syntax
+    const root = document.documentElement;
+    const styles = getComputedStyle(root);
+    const bg = `oklch(${styles.getPropertyValue("--background").trim()})`;
+    const fg = `oklch(${styles.getPropertyValue("--foreground").trim()})`;
+    const border = `oklch(${styles.getPropertyValue("--border").trim()})`;
+    const primary = `oklch(${styles.getPropertyValue("--primary").trim()})`;
 
-    // Force styles for visibility
     const visibleNodes = newNodes.map((node) => ({
       ...node,
       style: {
         ...node.style,
-        justifyContent: "center",
-        alignItems: "center",
-        display: "flex",
-        background: node.style?.background || bgColor,
-        border: node.style?.border || `1px solid ${borderColor}`,
-        color: node.style?.color || fgColor,
-        borderRadius: node.style?.borderRadius || "8px",
-        padding: node.style?.padding || "8px 12px",
-        minWidth: node.style?.minWidth || 50,
-        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        background: node.data?.label?.includes("val:")
+          ? `color-mix(in oklch, ${primary} 15%, ${bg})`
+          : bg,
+        color: fg,
+        border: node.data?.label?.includes("val:")
+          ? `2px solid ${primary}`
+          : `1px solid ${border}`,
+        borderRadius: "8px",
+        boxShadow: node.data?.label?.includes("val:")
+          ? "0 4px 12px rgba(2, 132, 199, 0.15)"
+          : "0 1px 3px rgba(0,0,0,0.1)",
+        fontSize: "12px",
+        padding: "8px 12px",
+        fontWeight: node.data?.label?.includes("val:") ? "700" : "500",
+        whiteSpace: "pre-line" as const,
       },
     }));
 
     const visibleEdges = newEdges.map((edge) => ({
       ...edge,
-      style: { stroke: edgeColor, strokeWidth: 1.5 },
-      animated: false,
+      style: { stroke: primary, strokeWidth: 1.5, opacity: 0.6 },
+      animated: true,
     }));
 
     setNodes(visibleNodes);
     setEdges(visibleEdges);
-  }, [
-    ll1ParseTree,
-    slrParseTree,
-    clrParseTree,
-    lalrParseTree,
-    type,
-    setNodes,
-    setEdges,
-  ]);
+  }, [treeData, setNodes, setEdges]);
 
   // Separate effect for fitting view
   useEffect(() => {
@@ -100,18 +83,21 @@ function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
   }, [nodes, fitView]);
 
   return (
-    <div className="h-full min-h-[500px] border-0 rounded-xl bg-muted/5 relative overflow-hidden ring-1 ring-border/50">
+    <div
+      style={{ width: "100%", height: "100%", minHeight: "600px" }}
+      className="border-0 rounded-xl bg-muted/5 relative overflow-hidden ring-1 ring-border/50"
+    >
       {nodes.length > 0 ? (
         <div className="absolute top-4 left-4 z-10 flex gap-2 pointer-events-none">
           <div className="bg-background/90 backdrop-blur-sm border border-border/50 px-3 py-1.5 rounded-md text-xs font-medium shadow-sm flex items-center gap-2 text-foreground">
-            <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-            <span className="font-bold opacity-80">{nodes.length}</span> Nodes
-            Rendered
+            <div className="h-2 w-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] animate-pulse" />
+            <span className="font-bold opacity-80">{nodes.length}</span>{" "}
+            Annotated Nodes Rendered
           </div>
         </div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 w-full text-center max-w-sm px-6">
             <div className="h-10 w-10 text-muted-foreground/30 flex items-center justify-center rounded-lg bg-muted/20">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -128,8 +114,11 @@ function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
               </svg>
             </div>
             <p className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-              No Tree Data Generated
+              No Tree generated
             </p>
+            <span className="text-muted-foreground/60 text-[11px] font-medium leading-relaxed">
+              Ensure steps evaluated correctly under Semantic Solver table.
+            </span>
           </div>
         </div>
       )}
@@ -158,10 +147,10 @@ function InnerParseTreeVisualizer({ type }: ParseTreeProps) {
   );
 }
 
-export function ParseTreeVisualizer(props: ParseTreeProps) {
+export function AnnotatedParseTreeVisualizer(props: AnnotatedParseTreeProps) {
   return (
     <ReactFlowProvider>
-      <InnerParseTreeVisualizer {...props} />
+      <InnerAnnotatedParseTree {...props} />
     </ReactFlowProvider>
   );
 }

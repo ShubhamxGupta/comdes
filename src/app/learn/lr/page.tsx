@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -181,6 +182,176 @@ export default function LRPage() {
               </div>
             </div>
           </CardContent>
+        </Card>
+
+        <Card className="mb-10 border-primary/10 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
+                3
+              </span>
+              Step-by-Step Example: Shift/Reduce Execution
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6 relative z-10">
+            <p className="text-muted-foreground">
+              Let's watch an LR parser evaluate the string <code>id + id</code>{" "}
+              using the math grammar. The parser has two main data structures: a{" "}
+              <strong>Stack</strong> (holding states and symbols) and an{" "}
+              <strong>Input Buffer</strong>.
+            </p>
+
+            <div className="bg-muted/30 border rounded-lg p-5 overflow-x-auto">
+              <table className="w-full text-sm text-left font-mono">
+                <thead className="text-xs text-muted-foreground uppercase bg-background">
+                  <tr>
+                    <th className="px-4 py-3 border-b">Step</th>
+                    <th className="px-4 py-3 border-b">Stack</th>
+                    <th className="px-4 py-3 border-b text-right">Input</th>
+                    <th className="px-4 py-3 border-b">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      1
+                    </td>
+                    <td className="px-4 py-3">[0]</td>
+                    <td className="px-4 py-3 text-right">id + id $</td>
+                    <td className="px-4 py-3">
+                      <span className="text-blue-500 font-bold">Shift</span>{" "}
+                      state 5 (push <code>id</code>)
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      2
+                    </td>
+                    <td className="px-4 py-3">[0, id, 5]</td>
+                    <td className="px-4 py-3 text-right">+ id $</td>
+                    <td className="px-4 py-3">
+                      <span className="text-orange-500 font-bold">Reduce</span>{" "}
+                      F &rarr; id
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      3
+                    </td>
+                    <td className="px-4 py-3">[0, F, 3]</td>
+                    <td className="px-4 py-3 text-right">+ id $</td>
+                    <td className="px-4 py-3">
+                      <span className="text-orange-500 font-bold">Reduce</span>{" "}
+                      T &rarr; F
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      4
+                    </td>
+                    <td className="px-4 py-3">[0, T, 2]</td>
+                    <td className="px-4 py-3 text-right">+ id $</td>
+                    <td className="px-4 py-3">
+                      <span className="text-orange-500 font-bold">Reduce</span>{" "}
+                      E &rarr; T
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      5
+                    </td>
+                    <td className="px-4 py-3">[0, E, 1]</td>
+                    <td className="px-4 py-3 text-right">+ id $</td>
+                    <td className="px-4 py-3">
+                      <span className="text-blue-500 font-bold">Shift</span>{" "}
+                      state 6 (push <code>+</code>)
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      6
+                    </td>
+                    <td className="px-4 py-3">[..., E, 1, +, 6]</td>
+                    <td className="px-4 py-3 text-right">id $</td>
+                    <td className="px-4 py-3">
+                      <span className="text-blue-500 font-bold">Shift</span>{" "}
+                      state 5 (push <code>id</code>)
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors border-b-2 border-b-primary/20">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      7-8
+                    </td>
+                    <td className="px-4 py-3">[..., +, 6, T, 9]</td>
+                    <td className="px-4 py-3 text-right">$</td>
+                    <td className="px-4 py-3">
+                      <span className="text-orange-500 font-bold">Reduce</span>{" "}
+                      id &rarr; F &rarr; T
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors bg-green-500/5 dark:bg-green-500/10">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      9
+                    </td>
+                    <td className="px-4 py-3">[0, E, 1, +, 6, T, 9]</td>
+                    <td className="px-4 py-3 text-right">$</td>
+                    <td className="px-4 py-3">
+                      <span className="text-orange-500 font-bold">Reduce</span>{" "}
+                      E &rarr; E + T
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/50 transition-colors font-bold text-primary">
+                    <td className="px-4 py-3 text-muted-foreground font-sans">
+                      10
+                    </td>
+                    <td className="px-4 py-3">[0, E, 1]</td>
+                    <td className="px-4 py-3 text-right">$</td>
+                    <td className="px-4 py-3">ACCEPT</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-sm font-medium mb-3">
+                Want to see the full exact trace with the entire state machine?
+              </p>
+              <Link
+                href={`/solve?g=${btoa("E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id")}&t=${btoa("id + id")}`}
+                className="w-full sm:w-auto inline-block"
+              >
+                <Button size="sm" className="gap-2">
+                  <Play className="h-4 w-4" /> Run this Trace Live
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8 overflow-hidden border-purple-500/20 shadow-md">
+          <div className="bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-background p-6">
+            <h3 className="text-xl font-bold flex items-center gap-2 mb-2 text-foreground">
+              <Play className="h-5 w-5 text-purple-500" />
+              Interactive Demo
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Unlike LL(1) parsers, LR parsers natively support{" "}
+              <strong>Left-Recursion</strong>. Let's test this capability live
+              in the Syntax Engine. We'll pre-load a left-recursive arithmetic
+              grammar and simulate the LALR(1) state machine.
+            </p>
+            <Link
+              href={`/solve?g=${btoa("E -> E + T | T\nT -> T * F | F\nF -> ( E ) | id")}&t=${btoa("id + id * id")}`}
+            >
+              <Button
+                size="lg"
+                className="gap-2 shadow-sm font-medium bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Play className="h-4 w-4 fill-current" /> Try LR Solver
+              </Button>
+            </Link>
+          </div>
         </Card>
       </div>
     </div>

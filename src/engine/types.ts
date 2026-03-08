@@ -1,6 +1,7 @@
 export interface Production {
   lhs: string;
   rhs: string[]; // e.g. ["E", "+", "T"]
+  semanticAction?: string; // e.g. "{ $$ = $1 + $3 }"
 }
 
 export interface Grammar {
@@ -47,5 +48,3 @@ export interface LRTable {
   action: { [stateId: number]: { [symbol: string]: string } };
   goto: { [stateId: number]: { [nonTerminal: string]: number } };
 }
-// Alias for backwards compatibility
-export type SLRTable = LRTable;
