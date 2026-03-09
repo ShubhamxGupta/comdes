@@ -15,15 +15,63 @@ import {
   Network,
   SplitSquareHorizontal,
   Calculator,
+  Layers,
+  Braces,
+  Cpu,
+  Workflow,
+  Zap,
+  Archive,
+  BarChart,
+  ListTree,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 const curriculum = [
   {
-    category: "Fundamentals",
+    category: "Module 1: Introduction & Lexical Analysis",
     description:
-      "Start here to understand the core building blocks of compiler terminology.",
+      "Understand the overarching compiler structure and the first phase of text tokenization.",
+    items: [
+      {
+        title: "Compiler Phases",
+        description:
+          "Structure and phases of a compiler, introduction to LLVM, lexemes, and tokens.",
+        icon: Layers,
+        href: "/learn/compiler-phases",
+        difficulty: "Beginner",
+        time: "10 min read",
+        color: "text-blue-500",
+        bg: "bg-blue-500/10",
+      },
+      {
+        title: "Extended RE to DFA",
+        description:
+          "Specify tokens via regular expressions and convert them to DFA (Direct Method).",
+        icon: Network,
+        href: "/learn/re-dfa",
+        difficulty: "Intermediate",
+        time: "12 min read",
+        color: "text-orange-500",
+        bg: "bg-orange-500/10",
+      },
+      {
+        title: "Lexical Analyzer",
+        description:
+          "Interactive toolkit to tokenize source code and build a symbol table.",
+        icon: Braces,
+        href: "/lexer",
+        difficulty: "Beginner",
+        time: "InteractiveTool",
+        color: "text-pink-500",
+        bg: "bg-pink-500/10",
+      },
+    ],
+  },
+  {
+    category: "Module 2: Syntax Analysis",
+    description:
+      "Deep dive into constructing Parse Trees and evaluating structural validity.",
     items: [
       {
         title: "Grammar Basics",
@@ -33,27 +81,20 @@ const curriculum = [
         href: "/learn/grammar",
         difficulty: "Beginner",
         time: "5 min read",
-        color: "text-blue-500",
-        bg: "bg-blue-500/10",
+        color: "text-indigo-500",
+        bg: "bg-indigo-500/10",
       },
       {
         title: "Direct Method",
         description:
           "Understand how to generate Parse Trees directly from grammar rules.",
-        icon: Network,
+        icon: ListTree,
         href: "/learn/direct-method",
         difficulty: "Beginner",
         time: "8 min read",
-        color: "text-orange-500",
-        bg: "bg-orange-500/10",
+        color: "text-teal-500",
+        bg: "bg-teal-500/10",
       },
-    ],
-  },
-  {
-    category: "Parsing Algorithms",
-    description:
-      "Deep dive into exactly how the Comdes Engine evaluates syntax trees.",
-    items: [
       {
         title: "LL(1) Parsing",
         description:
@@ -66,6 +107,28 @@ const curriculum = [
         bg: "bg-emerald-500/10",
       },
       {
+        title: "Shift-Reduce Parsing",
+        description:
+          "Learn the fundamental bottom-up actions: Shift, Reduce, Accept, Error.",
+        icon: SplitSquareHorizontal,
+        href: "/learn/shift-reduce",
+        difficulty: "Intermediate",
+        time: "12 min read",
+        color: "text-rose-500",
+        bg: "bg-rose-500/10",
+      },
+      {
+        title: "Operator Precedence",
+        description:
+          "Construct parsers specifically for evaluating mathematical expressions.",
+        icon: Calculator,
+        href: "/learn/operator-precedence",
+        difficulty: "Intermediate",
+        time: "10 min read",
+        color: "text-amber-500",
+        bg: "bg-amber-500/10",
+      },
+      {
         title: "LR Parsing",
         description:
           "Master Bottom-Up parsing tiers: LR(0), SLR(1), CLR(1), and LALR(1).",
@@ -76,27 +139,115 @@ const curriculum = [
         color: "text-purple-500",
         bg: "bg-purple-500/10",
       },
+    ],
+  },
+  {
+    category: "Module 3: Semantic Analysis",
+    description:
+      "Assign meaning to the syntactical structure and evaluate attributes.",
+    items: [
       {
-        title: "Shift-Reduce Parsing",
+        title: "Syntax Directed Translation",
         description:
-          "Learn the fundamental bottom-up actions: Shift, Reduce, Accept, Error.",
-        icon: SplitSquareHorizontal,
-        href: "/learn/shift-reduce",
-        difficulty: "Intermediate",
-        time: "12 min read",
-        color: "text-indigo-500",
-        bg: "bg-indigo-500/10",
-      },
-      {
-        title: "Operator Precedence",
-        description:
-          "Construct parsers specifically for evaluating mathematical expressions without state machines.",
-        icon: Calculator,
-        href: "/learn/operator-precedence",
+          "Evaluation order, SD schemes, and L-attributed definitions.",
+        icon: Workflow,
+        href: "/learn/sdt",
         difficulty: "Intermediate",
         time: "10 min read",
-        color: "text-teal-500",
-        bg: "bg-teal-500/10",
+        color: "text-sky-500",
+        bg: "bg-sky-500/10",
+      },
+      {
+        title: "Semantic Solver",
+        description:
+          "Evaluate Assigned Attributes Across the Parse Tree interactively.",
+        icon: PlayCircle,
+        href: "/semantic",
+        difficulty: "Intermediate",
+        time: "InteractiveTool",
+        color: "text-lime-500",
+        bg: "bg-lime-500/10",
+      },
+    ],
+  },
+  {
+    category: "Module 4: Intermediate Code Generation",
+    description:
+      "Translate semantic structures into machine-independent intermediate logic.",
+    items: [
+      {
+        title: "TAC & Syntax Trees",
+        description:
+          "Variants of syntax trees, Three Address Code, and translation of expressions.",
+        icon: Archive,
+        href: "/learn/tac-trees",
+        difficulty: "Intermediate",
+        time: "10 min read",
+        color: "text-fuchsia-500",
+        bg: "bg-fuchsia-500/10",
+      },
+      {
+        title: "ICG Generator",
+        description: "Generate TAC, Quadruples, and Triples from SDT rules.",
+        icon: Code2,
+        href: "/icg",
+        difficulty: "Advanced",
+        time: "InteractiveTool",
+        color: "text-violet-500",
+        bg: "bg-violet-500/10",
+      },
+    ],
+  },
+  {
+    category: "Module 5: Code Optimization",
+    description:
+      "Enhance intermediate code for target architecture efficiency.",
+    items: [
+      {
+        title: "Basic Blocks & DAG",
+        description:
+          "Principal sources of optimization, basic blocks, and DAG representation.",
+        icon: BarChart,
+        href: "/learn/basic-blocks",
+        difficulty: "Advanced",
+        time: "15 min read",
+        color: "text-cyan-500",
+        bg: "bg-cyan-500/10",
+      },
+    ],
+  },
+  {
+    category: "Module 6: Code Generation",
+    description:
+      "Design execution environments and generate machine operations.",
+    items: [
+      {
+        title: "Target Generation",
+        description:
+          "Issues in codegen, register allocation, next-use metadata, and memory.",
+        icon: Cpu,
+        href: "/learn/target-codegen",
+        difficulty: "Advanced",
+        time: "12 min read",
+        color: "text-red-500",
+        bg: "bg-red-500/10",
+      },
+    ],
+  },
+  {
+    category: "Module 7: Parallelism",
+    description: "Scale performance across multiple processor threads.",
+    items: [
+      {
+        title: "Parallel Optimization",
+        description:
+          "Automatic parallelization, instruction scheduling, and SSA form.",
+        icon: Zap,
+        href: "/learn/parallelism",
+        difficulty: "Advanced",
+        time: "12 min read",
+        color: "text-yellow-500",
+        bg: "bg-yellow-500/10",
       },
     ],
   },

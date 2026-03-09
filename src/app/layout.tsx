@@ -72,7 +72,9 @@ export default function RootLayout({
           <TooltipProvider>
             <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-background">
               <Sidebar />
-              <main className="flex-1 overflow-y-auto">{children}</main>
+              <main className="flex-1 overflow-y-auto min-h-0 min-w-0">
+                {children}
+              </main>
             </div>
           </TooltipProvider>
         </ThemeProvider>

@@ -317,9 +317,9 @@ export default function ICGPage() {
         {/* Right Panel: Output */}
         <ResizablePanel
           defaultSize={65}
-          className="bg-muted/30 p-6 flex flex-col"
+          className="bg-muted/30 p-6 flex flex-col min-h-0"
         >
-          <Tabs defaultValue="tac" className="h-full flex flex-col">
+          <Tabs defaultValue="tac" className="h-full flex flex-col min-h-0">
             <TabsList className="grid w-full max-w-[600px] grid-cols-4 p-1 bg-muted/50 border shadow-sm rounded-lg">
               <TabsTrigger
                 value="tac"
@@ -347,7 +347,7 @@ export default function ICGPage() {
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 mt-6 overflow-auto bg-background rounded-xl border shadow-sm p-1">
+            <div className="flex-1 mt-6 overflow-auto min-h-0 bg-background rounded-xl border shadow-sm p-1">
               {/* TAC Output */}
               <TabsContent
                 value="tac"

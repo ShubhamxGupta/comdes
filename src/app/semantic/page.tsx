@@ -299,9 +299,9 @@ export default function SemanticPage() {
         {/* Right Panel: Output */}
         <ResizablePanel
           defaultSize={65}
-          className="bg-muted/30 p-6 flex flex-col"
+          className="bg-muted/30 p-6 flex flex-col min-h-0"
         >
-          <Tabs defaultValue="tree" className="h-full flex flex-col">
+          <Tabs defaultValue="tree" className="h-full flex flex-col min-h-0">
             <TabsList className="grid w-[400px] grid-cols-2 p-1 bg-muted/50 border shadow-sm rounded-lg">
               <TabsTrigger
                 value="tree"
@@ -317,7 +317,7 @@ export default function SemanticPage() {
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex-1 mt-6 overflow-auto bg-background rounded-xl border shadow-sm p-1">
+            <div className="flex-1 mt-6 overflow-auto min-h-0 bg-background rounded-xl border shadow-sm p-1">
               <TabsContent
                 value="tree"
                 className="h-full w-full m-0 relative rounded-lg overflow-hidden"

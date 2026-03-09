@@ -81,6 +81,38 @@ function SolverContent() {
     "LL1",
   );
 
+  // Auto-select the first available parser sub-type when selectedParsers changes
+  useEffect(() => {
+    if (selectedParsers.length > 0) {
+      const first = selectedParsers[0] as "LL1" | "SLR1" | "CLR1" | "LALR1";
+      // If current selection is not in the selected list, switch to first
+      if (!selectedParsers.includes(stepsType)) {
+        setStepsType(first);
+      }
+      if (!selectedParsers.includes(treeType)) {
+        setTreeType(first);
+      }
+      // Map parser types to automata types
+      const automataMap: Record<string, "LR0" | "LR1" | "LALR1"> = {
+        LL1: "LR0",
+        SLR1: "LR0",
+        CLR1: "LR1",
+        LALR1: "LALR1",
+      };
+      if (
+        !selectedParsers.includes(
+          automataType === "LR0"
+            ? "SLR1"
+            : automataType === "LR1"
+              ? "CLR1"
+              : "LALR1",
+        )
+      ) {
+        setAutomataType(automataMap[first] || "LR0");
+      }
+    }
+  }, [selectedParsers]);
+
   const searchParams = useSearchParams();
   const problemId = searchParams.get("problemId");
   const sharedGrammar = searchParams.get("g");
@@ -451,13 +483,13 @@ function SolverContent() {
         {/* Right Panel: Output */}
         <ResizablePanel
           defaultSize={70}
-          className="bg-muted/30 p-6 flex flex-col"
+          className="bg-muted/30 p-6 flex flex-col min-h-0"
         >
           {parsedGrammar ? (
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="h-full flex flex-col"
+              className="h-full flex flex-col min-h-0"
             >
               <TabsList className="grid w-full grid-cols-5 p-1 bg-muted/50 border shadow-sm rounded-lg mb-4">
                 <TabsTrigger
@@ -492,7 +524,7 @@ function SolverContent() {
                 </TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 mt-4 overflow-auto bg-background rounded-xl border p-4 shadow-sm relative">
+              <div className="flex-1 mt-4 overflow-auto min-h-0 bg-background rounded-xl border p-4 shadow-sm relative">
                 <TabsContent value="steps" className="h-full m-0 relative">
                   <div className="flex flex-col h-full">
                     <div className="flex justify-start p-2 border-b gap-2 items-center">

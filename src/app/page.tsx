@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -126,36 +127,52 @@ export default function Dashboard() {
         <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/[0.07] blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-blue-500/[0.06] blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col items-center text-center gap-5 max-w-2xl mx-auto">
-          <div className="inline-flex items-center rounded-full border bg-background/80 backdrop-blur-sm px-4 py-1.5 text-xs font-semibold tracking-wide shadow-sm text-muted-foreground">
-            <Sparkles className="h-3 w-3 mr-2 text-primary" />
-            Interactive Compiler Design Platform
+        <div className="relative flex flex-col lg:flex-row items-center gap-12 max-w-6xl mx-auto">
+          {/* Text Content */}
+          <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left gap-5">
+            <div className="inline-flex items-center rounded-full border bg-background/80 backdrop-blur-sm px-4 py-1.5 text-xs font-semibold tracking-wide shadow-sm text-muted-foreground">
+              <Sparkles className="h-3 w-3 mr-2 text-primary" />
+              Interactive Compiler Design Platform
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground/90 to-muted-foreground/70 leading-[1.1]">
+              Master Compiler Design
+            </h1>
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
+              Explore every phase of compilation interactively — from lexical
+              analysis to intermediate code generation.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 mt-2 w-full sm:w-auto">
+              <Link href="/lexer" className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  className="w-full gap-2 rounded-xl text-sm h-11 px-7 shadow-sm font-semibold hover:scale-[1.02] transition-transform"
+                >
+                  Start Building <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/learn" className="w-full sm:w-auto">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full gap-2 rounded-xl text-sm h-11 px-7 font-semibold"
+                >
+                  Explore Theory <BookOpen className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground via-foreground/90 to-muted-foreground/70 leading-[1.1]">
-            Master Compiler Design
-          </h1>
-          <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl">
-            Explore every phase of compilation interactively — from lexical
-            analysis to intermediate code generation.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-2 w-full sm:w-auto">
-            <Link href="/lexer" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="w-full gap-2 rounded-xl text-sm h-11 px-7 shadow-sm font-semibold"
-              >
-                Start Building <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/learn" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full gap-2 rounded-xl text-sm h-11 px-7 font-semibold"
-              >
-                Explore Theory <BookOpen className="h-4 w-4" />
-              </Button>
-            </Link>
+
+          {/* Hero Graphic */}
+          <div className="flex-1 hidden lg:flex justify-center items-center relative w-full h-full max-w-lg mt-6 lg:mt-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-purple-500/30 blur-3xl rounded-full mix-blend-screen opacity-60"></div>
+            <Image
+              src="/hero.png"
+              alt="Compiler Pipeline 3D Abstract"
+              width={500}
+              height={500}
+              className="relative z-10 w-full h-auto drop-shadow-2xl rounded-2xl object-cover hover:scale-[1.02] transition-transform duration-500"
+              priority
+            />
           </div>
         </div>
       </div>

@@ -15,6 +15,9 @@ import {
   ScanLine,
   Menu,
   Keyboard,
+  Network,
+  Activity,
+  Cpu,
 } from "lucide-react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -47,10 +50,13 @@ const navSections: NavSection[] = [
   {
     label: "Compiler Phases",
     items: [
+      { name: "RE → DFA", href: "/re-dfa", icon: Network },
       { name: "Lexical Analyzer", href: "/lexer", icon: ScanLine },
       { name: "Syntax Solver", href: "/solve", icon: Code2 },
       { name: "Semantic Solver", href: "/semantic", icon: Braces },
       { name: "ICG Solver", href: "/icg", icon: FileCode2 },
+      { name: "Optimizer", href: "/optimizer", icon: Activity },
+      { name: "Code Generator", href: "/codegen", icon: Cpu },
     ],
   },
   {
@@ -76,13 +82,13 @@ function SidebarContent({
     <div className="w-full h-full md:w-64 border-r bg-muted/20 flex flex-col shadow-sm">
       <div className="p-6 border-b flex flex-col justify-center bg-background/50 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm border bg-background flex items-center justify-center">
+          <div className="h-8 w-8 rounded-[10px] overflow-hidden shadow-sm flex items-center justify-center shrink-0">
             <Image
-              src="/logo.png"
+              src="/logo-v2.png"
               alt="Comdes Logo"
               width={32}
               height={32}
-              className="object-contain"
+              className="object-cover h-full w-full"
             />
           </div>
           <div>
